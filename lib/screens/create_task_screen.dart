@@ -74,6 +74,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xFF0D1117),
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: Text(
           widget.task != null ? 'Edit Task' : 'Create Task',
@@ -101,7 +102,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen>
                 colors: [Color(0xFF0D1117), Color(0xFF161B22)],
               ),
             ),
-            child: Padding(
+            child: SingleChildScrollView(
               padding: EdgeInsets.all(16),
               child: Form(
                 key: _formKey,
