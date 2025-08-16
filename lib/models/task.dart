@@ -5,6 +5,7 @@ class Task {
   final DateTime createdAt;
   bool isCompleted;
   final String priority;
+  final String? imagePath;
 
   Task({
     required this.id,
@@ -13,6 +14,7 @@ class Task {
     required this.createdAt,
     this.isCompleted = false,
     this.priority = 'Medium',
+    this.imagePath,
   });
 
   Map<String, dynamic> toJson() {
@@ -23,6 +25,7 @@ class Task {
       'createdAt': createdAt.millisecondsSinceEpoch,
       'isCompleted': isCompleted,
       'priority': priority,
+      'imagePath': imagePath,
     };
   }
 
@@ -34,6 +37,7 @@ class Task {
       createdAt: DateTime.fromMillisecondsSinceEpoch(json['createdAt']),
       isCompleted: json['isCompleted'],
       priority: json['priority'],
+      imagePath: json['imagePath'],
     );
   }
 }

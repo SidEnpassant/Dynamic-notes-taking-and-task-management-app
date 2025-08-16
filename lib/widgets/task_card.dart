@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/task.dart';
@@ -54,33 +56,41 @@ class _TaskCardState extends State<TaskCard> with TickerProviderStateMixin {
     return ScaleTransition(
       scale: _scaleAnimation,
       child: GestureDetector(
-        onTapDown: (_) => _controller.forward(),
-        onTapUp: (_) => _controller.reverse(),
-        onTapCancel: () => _controller.reverse(),
-        onTap: () {
-          Navigator.of(context).push(
-            PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) =>
-                  CreateTaskScreen(task: widget.task),
-              transitionsBuilder:
-                  (context, animation, secondaryAnimation, child) {
-                    return SlideTransition(
-                      position:
-                          Tween<Offset>(
-                            begin: Offset(1, 0),
-                            end: Offset.zero,
-                          ).animate(
-                            CurvedAnimation(
-                              parent: animation,
-                              curve: Curves.easeOut,
-                            ),
-                          ),
-                      child: child,
-                    );
-                  },
-            ),
-          );
+        onTapDown: (_) {
+          if (!widget.task.isCompleted) _controller.forward();
         },
+        onTapUp: (_) {
+          if (!widget.task.isCompleted) _controller.reverse();
+        },
+        onTapCancel: () {
+          if (!widget.task.isCompleted) _controller.reverse();
+        },
+        onTap: widget.task.isCompleted
+            ? null
+            : () {
+                Navigator.of(context).push(
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) =>
+                        CreateTaskScreen(task: widget.task),
+                    transitionsBuilder:
+                        (context, animation, secondaryAnimation, child) {
+                          return SlideTransition(
+                            position:
+                                Tween<Offset>(
+                                  begin: Offset(1, 0),
+                                  end: Offset.zero,
+                                ).animate(
+                                  CurvedAnimation(
+                                    parent: animation,
+                                    curve: Curves.easeOut,
+                                  ),
+                                ),
+                            child: child,
+                          );
+                        },
+                  ),
+                );
+              },
         child: Container(
           margin: EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
@@ -112,6 +122,19 @@ class _TaskCardState extends State<TaskCard> with TickerProviderStateMixin {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (widget.task.imagePath != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.file(
+                        File(widget.task.imagePath!),
+                        height: 150,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
                 Row(
                   children: [
                     GestureDetector(

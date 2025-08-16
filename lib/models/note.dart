@@ -4,6 +4,7 @@ class Note {
   final String content;
   final DateTime createdAt;
   final String category;
+  final String? imagePath;
 
   Note({
     required this.id,
@@ -11,6 +12,7 @@ class Note {
     required this.content,
     required this.createdAt,
     this.category = 'General',
+    this.imagePath,
   });
 
   Map<String, dynamic> toJson() {
@@ -20,6 +22,7 @@ class Note {
       'content': content,
       'createdAt': createdAt.millisecondsSinceEpoch,
       'category': category,
+      'imagePath': imagePath,
     };
   }
 
@@ -30,6 +33,7 @@ class Note {
       content: json['content'],
       createdAt: DateTime.fromMillisecondsSinceEpoch(json['createdAt']),
       category: json['category'],
+      imagePath: json['imagePath'],
     );
   }
 }

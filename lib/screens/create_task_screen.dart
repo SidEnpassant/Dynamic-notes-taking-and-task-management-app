@@ -1,4 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import '../providers/task_provider.dart';
 import '../models/task.dart';
@@ -18,6 +23,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen>
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   String _selectedPriority = 'Medium';
+  String? _imagePath;
   late AnimationController _animationController;
   late Animation<double> _slideAnimation;
 
@@ -36,6 +42,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen>
       _titleController.text = widget.task!.title;
       _descriptionController.text = widget.task!.description;
       _selectedPriority = widget.task!.priority;
+      _imagePath = widget.task!.imagePath;
     }
 
     _animationController.forward();
@@ -49,6 +56,41 @@ class _CreateTaskScreenState extends State<CreateTaskScreen>
     super.dispose();
   }
 
+  Future<void> _pickImage() async {
+    final imagePicker = ImagePicker();
+    final source = await showDialog<ImageSource>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Select Image Source'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, ImageSource.camera),
+            child: Text('Camera'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, ImageSource.gallery),
+            child: Text('Gallery'),
+          ),
+        ],
+      ),
+    );
+
+    if (source == null) return;
+
+    final pickedFile = await imagePicker.pickImage(source: source);
+
+    if (pickedFile != null) {
+      final directory = await getApplicationDocumentsDirectory();
+      final fileName = p.basename(pickedFile.path);
+      final savedImage = await File(
+        pickedFile.path,
+      ).copy('${directory.path}/$fileName');
+      setState(() {
+        _imagePath = savedImage.path;
+      });
+    }
+  }
+
   void _saveTask() {
     if (_formKey.currentState!.validate()) {
       final task = Task(
@@ -58,15 +100,22 @@ class _CreateTaskScreenState extends State<CreateTaskScreen>
         createdAt: widget.task?.createdAt ?? DateTime.now(),
         priority: _selectedPriority,
         isCompleted: widget.task?.isCompleted ?? false,
+        imagePath: _imagePath,
       );
 
       if (widget.task != null) {
-        context.read<TaskProvider>().updateTask(task);
+        Provider.of<TaskProvider>(
+          context as BuildContext,
+          listen: false,
+        ).updateTask(task);
       } else {
-        context.read<TaskProvider>().addTask(task);
+        Provider.of<TaskProvider>(
+          context as BuildContext,
+          listen: false,
+        ).addTask(task);
       }
 
-      Navigator.of(context).pop();
+      Navigator.of(context as BuildContext).pop();
     }
   }
 
@@ -134,6 +183,8 @@ class _CreateTaskScreenState extends State<CreateTaskScreen>
                     ),
                     SizedBox(height: 24),
                     _buildPrioritySelector(),
+                    SizedBox(height: 24),
+                    _buildImagePicker(),
                     SizedBox(height: 32),
                     _buildSaveButton(),
                   ],
@@ -142,6 +193,38 @@ class _CreateTaskScreenState extends State<CreateTaskScreen>
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildImagePicker() {
+    return GestureDetector(
+      onTap: _pickImage,
+      child: Container(
+        width: double.infinity,
+        height: 150,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Color(0xFF30363D)),
+          color: Color(0xFF21262D).withOpacity(0.5),
+        ),
+        child: _imagePath != null
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.file(File(_imagePath!), fit: BoxFit.cover),
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.camera_alt_outlined,
+                    color: Colors.white60,
+                    size: 40,
+                  ),
+                  SizedBox(height: 8),
+                  Text('Add an Image', style: TextStyle(color: Colors.white60)),
+                ],
+              ),
       ),
     );
   }

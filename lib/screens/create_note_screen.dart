@@ -1,4 +1,9 @@
+import 'dart:io' show File;
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import '../providers/note_provider.dart';
 import '../models/note.dart';
@@ -20,6 +25,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
   String _selectedCategory = 'General';
   late AnimationController _animationController;
   late Animation<double> _slideAnimation;
+  String? _imagePath;
 
   final List<String> _categories = [
     'General',
@@ -45,6 +51,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
       _titleController.text = widget.note!.title;
       _contentController.text = widget.note!.content;
       _selectedCategory = widget.note!.category;
+      _imagePath = widget.note!.imagePath;
     }
 
     _animationController.forward();
@@ -58,6 +65,42 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
     super.dispose();
   }
 
+  Future<void> _pickImage() async {
+    if (!mounted) return;
+    final imagePicker = ImagePicker();
+    final source = await showDialog<ImageSource>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Select Image Source'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, ImageSource.camera),
+            child: Text('Camera'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, ImageSource.gallery),
+            child: Text('Gallery'),
+          ),
+        ],
+      ),
+    );
+
+    if (source == null) return;
+
+    final pickedFile = await imagePicker.pickImage(source: source);
+
+    if (pickedFile != null) {
+      final directory = await getApplicationDocumentsDirectory();
+      final fileName = p.basename(pickedFile.path);
+      final savedImage = await File(
+        pickedFile.path,
+      ).copy('${directory.path}/$fileName');
+      setState(() {
+        _imagePath = savedImage.path;
+      });
+    }
+  }
+
   void _saveNote() {
     if (_formKey.currentState!.validate()) {
       final note = Note(
@@ -66,15 +109,22 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
         content: _contentController.text.trim(),
         createdAt: widget.note?.createdAt ?? DateTime.now(),
         category: _selectedCategory,
+        imagePath: _imagePath,
       );
 
       if (widget.note != null) {
-        context.read<NoteProvider>().updateNote(note);
+        Provider.of<NoteProvider>(
+          context as BuildContext,
+          listen: false,
+        ).updateNote(note);
       } else {
-        context.read<NoteProvider>().addNote(note);
+        Provider.of<NoteProvider>(
+          context as BuildContext,
+          listen: false,
+        ).addNote(note);
       }
 
-      Navigator.of(context).pop();
+      Navigator.of(context as BuildContext).pop();
     }
   }
 
@@ -141,6 +191,8 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
                     ),
                     SizedBox(height: 24),
                     _buildCategorySelector(),
+                    SizedBox(height: 24),
+                    _buildImagePicker(),
                     SizedBox(height: 32),
                     _buildSaveButton(),
                   ],
@@ -149,6 +201,38 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildImagePicker() {
+    return GestureDetector(
+      onTap: _pickImage,
+      child: Container(
+        width: double.infinity,
+        height: 150,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Color(0xFF30363D)),
+          color: Color(0xFF21262D).withOpacity(0.5),
+        ),
+        child: _imagePath != null
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.file(File(_imagePath!), fit: BoxFit.cover),
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.camera_alt_outlined,
+                    color: Colors.white60,
+                    size: 40,
+                  ),
+                  SizedBox(height: 8),
+                  Text('Add an Image', style: TextStyle(color: Colors.white60)),
+                ],
+              ),
       ),
     );
   }

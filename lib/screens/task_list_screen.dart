@@ -14,7 +14,7 @@ class _TaskListScreenState extends State<TaskListScreen>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  int _selectedFilter = 0; // 0: All, 1: Pending, 2: Completed
+  int _selectedFilter = 0;
 
   @override
   void initState() {
@@ -83,7 +83,7 @@ class _TaskListScreenState extends State<TaskListScreen>
                   }
 
                   var tasks = _selectedFilter == 0
-                      ? taskProvider.tasks
+                      ? taskProvider.pendingTasks
                       : _selectedFilter == 1
                       ? taskProvider.pendingTasks
                       : taskProvider.completedTasks;
